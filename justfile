@@ -96,3 +96,30 @@ db-info:
     else
         echo "No database found at $(pwd)/data"
     fi
+
+# Run the geohash prefix search test
+test-prefix:
+    #!/usr/bin/env bash
+    echo "🧪 Running geohash prefix search test..."
+    ./prefix_search_test.sh
+
+# Full test workflow: clear DB, start relay in background, run test, stop relay
+test-full:
+    #!/usr/bin/env bash
+    echo "🔄 Running full test workflow..."
+    just clear-db
+    echo "Starting relay in background..."
+    cargo run --bin rnostr --no-default-features relay > test_relay.log 2>&1 &
+    RELAY_PID=$!
+    echo "Relay started (PID: $RELAY_PID)"
+
+    echo "Waiting for relay to start..."
+    sleep 3
+
+    echo "Running prefix search test..."
+    ./prefix_search_test.sh
+
+    echo "Stopping relay..."
+    kill $RELAY_PID 2>/dev/null || true
+    wait $RELAY_PID 2>/dev/null || true
+    echo "✅ Full test completed"
